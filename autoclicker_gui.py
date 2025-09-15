@@ -3,13 +3,80 @@
 AutoClicker GUI for Ubuntu - Graphical interface for the autoclicker
 """
 
+import os
+import sys
+import subprocess
+import json
+
+def detect_display():
+    """Detect available X11 display and set DISPLAY environment variable"""
+    current_display = os.environ.get('DISPLAY', '')
+
+    # If DISPLAY is already set and seems valid, try it
+    if current_display and (current_display.startswith(':') or current_display.startswith('localhost:')):
+        try:
+            # Test if we can connect to the display by running a simple X11 command
+            result = subprocess.run(['xset', '-q'], capture_output=True, timeout=2, env=dict(os.environ))
+            if result.returncode == 0:
+                return True
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+            pass
+
+    # Try to find available displays
+    possible_displays = [':0', ':0.0', ':1', ':1.0', ':10.0', 'localhost:10.0', 'localhost:0.0']
+
+    for display in possible_displays:
+        try:
+            # Test the display
+            test_env = dict(os.environ)
+            test_env['DISPLAY'] = display
+            result = subprocess.run(['xset', '-q'], capture_output=True, timeout=2, env=test_env)
+            if result.returncode == 0:
+                os.environ['DISPLAY'] = display
+                print(f"✅ Found working display: {display}")
+                return True
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+            continue
+
+    # If no display found, try to get from who command or other sources
+    try:
+        result = subprocess.run(['who'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if '(' in line and ')' in line:
+                    # Extract display from who output like "user :0 (192.168.1.1)"
+                    parts = line.split('(')
+                    if len(parts) > 0:
+                        display_part = parts[0].strip().split()[-1]
+                        if display_part.startswith(':'):
+                            try:
+                                test_env = dict(os.environ)
+                                test_env['DISPLAY'] = display_part
+                                result = subprocess.run(['xset', '-q'], capture_output=True, timeout=2, env=test_env)
+                                if result.returncode == 0:
+                                    os.environ['DISPLAY'] = display_part
+                                    print(f"✅ Found working display from who: {display_part}")
+                                    return True
+                            except:
+                                continue
+    except:
+        pass
+
+    print("❌ No working X11 display found. Make sure you're running in a graphical environment.")
+    print("💡 Try: export DISPLAY=:0.0")
+    print("💡 Or: export DISPLAY=:10.0 (if using SSH)")
+    return False
+
+# Detect and set display before importing tkinter
+if not detect_display():
+    print("Cannot run GUI without a working X11 display.")
+    print("Please run this in a graphical environment or set the DISPLAY variable manually.")
+    sys.exit(1)
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import threading
 import time
-import os
-import sys
-import json
 
 # Try to import pyautogui and handle display connection errors
 try:
