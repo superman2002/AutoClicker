@@ -400,17 +400,6 @@ class AutoClickerGUI:
     def save_settings(self):
         """Save current settings to JSON file"""
         try:
-            # Separate text targets from image targets
-            all_targets = self.get_targets()
-            text_targets = []
-            image_targets = []
-
-            for target in all_targets:
-                if target.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')) and os.path.exists(target):
-                    image_targets.append(target)
-                else:
-                    text_targets.append(target)
-
             settings = {
                 "mode": self.mode_var.get(),
                 "confidence": self.confidence_var.get(),
@@ -422,9 +411,7 @@ class AutoClickerGUI:
                     "width": self.region_vars[2].get(),
                     "height": self.region_vars[3].get()
                 },
-                "text_targets": text_targets,
-                "image_targets": image_targets,
-                "targets_text": self.target_text.get("1.0", "end-1c")  # Keep original text for display
+                "targets": self.target_text.get("1.0", "end-1c")
             }
 
             with open(self.settings_file, 'w') as f:
@@ -461,18 +448,9 @@ class AutoClickerGUI:
                     self.region_vars[2].set(region.get("width", pyautogui.size()[0]))
                     self.region_vars[3].set(region.get("height", pyautogui.size()[1]))
 
-                # Load targets - handle both old and new formats
-                self.target_text.delete("1.0", "end")
-
-                if "targets_text" in settings:
-                    # New format with separate text/image targets
-                    self.target_text.insert("1.0", settings["targets_text"])
-                elif "targets" in settings:
-                    # Old format - single targets string
+                if "targets" in settings:
+                    self.target_text.delete("1.0", "end")
                     self.target_text.insert("1.0", settings["targets"])
-                else:
-                    # No targets - use default
-                    self.target_text.insert("1.0", "# Enter targets here (one per line):\n# Images: /path/to/image.png\n# Text: OK\n# Mixed: both supported")
 
         except Exception as e:
             print(f"Error loading settings: {e}")
