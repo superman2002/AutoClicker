@@ -57,11 +57,12 @@ except Exception as e:
             print("• Or set: export DISPLAY=:0.0")
 
 class AutoClicker:
-    def __init__(self, confidence=0.8, interval=1.0, region=None, cache_duration=0.5):
+    def __init__(self, confidence=0.8, interval=1.0, region=None, cache_duration=0.5, logger=None):
         self.confidence = confidence
         self.interval = interval
         self.region = region  # Format: (x, y, width, height)
         self.stop_flag = False  # Flag to signal stopping
+        self.logger = logger  # Logger callback function
         # Screenshot caching to reduce flickering
         self.last_screenshot = None
         self.last_screenshot_time = 0
@@ -70,7 +71,11 @@ class AutoClicker:
             pyautogui.FAILSAFE = True
             pyautogui.PAUSE = 0.5
         else:
-            print("Error: PyAutoGUI not available. Cannot initialize AutoClicker.")
+            error_msg = "Error: PyAutoGUI not available. Cannot initialize AutoClicker."
+            if self.logger:
+                self.logger(error_msg)
+            else:
+                print(error_msg)
             sys.exit(1)
 
     def stop(self):
@@ -96,7 +101,8 @@ class AutoClicker:
                     return screenshot
 
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError, Exception) as e:
-            print(f"Scrot failed: {e}")
+            if self.logger:
+                self.logger(f"Scrot failed: {e}")
             pass
 
         try:
@@ -115,11 +121,13 @@ class AutoClicker:
                     return screenshot
 
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError, Exception) as e:
-            print(f"ImageMagick import failed: {e}")
+            if self.logger:
+                self.logger(f"ImageMagick import failed: {e}")
             pass
 
         # Final fallback to PyAutoGUI
-        print("Warning: Using PyAutoGUI screenshot (may cause flicker)")
+        if self.logger:
+            self.logger("Warning: Using PyAutoGUI screenshot (may cause flicker)")
         screenshot = pyautogui.screenshot()
         return cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
@@ -141,14 +149,16 @@ class AutoClicker:
     def find_image(self, template_path):
         """Find image template on screen using OpenCV template matching"""
         if not os.path.exists(template_path):
-            print(f"Template image not found: {template_path}")
+            if self.logger:
+                self.logger(f"Template image not found: {template_path}")
             return None
 
         screen = self.capture_screen()
         template = cv2.imread(template_path, cv2.IMREAD_COLOR)
 
         if template is None:
-            print(f"Could not load template image: {template_path}")
+            if self.logger:
+                self.logger(f"Could not load template image: {template_path}")
             return None
 
         # Perform template matching
@@ -202,10 +212,11 @@ class AutoClicker:
         if isinstance(template_paths, str):
             template_paths = [template_paths]
 
-        print(f"Starting image autoclicker with {len(template_paths)} template(s)")
-        for i, path in enumerate(template_paths):
-            print(f"  {i+1}. {path}")
-        print("Press Ctrl+C to stop")
+        if self.logger:
+            self.logger(f"Starting image autoclicker with {len(template_paths)} template(s)")
+            for i, path in enumerate(template_paths):
+                self.logger(f"  {i+1}. {path}")
+            self.logger("Press Ctrl+C to stop")
 
         try:
             while not self.stop_flag:
@@ -214,30 +225,35 @@ class AutoClicker:
                         break
                     position = self.find_image(template_path)
                     if position:
-                        print(f"Found target '{os.path.basename(template_path)}' at {position}, clicking...")
+                        if self.logger:
+                            self.logger(f"Found target '{os.path.basename(template_path)}' at {position}, clicking...")
                         self.click_at(position)
                         break  # Click the first found target
                 else:
                     if not self.stop_flag:
-                        print("No targets found, waiting...")
+                        if self.logger:
+                            self.logger("No targets found, waiting...")
 
                 if not self.stop_flag:
                     time.sleep(self.interval)
 
         except KeyboardInterrupt:
-            print("\nStopped by user")
+            if self.logger:
+                self.logger("\nStopped by user")
         finally:
-            print("Image autoclicker stopped")
+            if self.logger:
+                self.logger("Image autoclicker stopped")
 
     def run_text_clicker(self, target_texts):
         """Main loop for text-based clicking with multiple targets"""
         if isinstance(target_texts, str):
             target_texts = [target_texts]
 
-        print(f"Starting text autoclicker for {len(target_texts)} target(s)")
-        for i, text in enumerate(target_texts):
-            print(f"  {i+1}. '{text}'")
-        print("Press Ctrl+C to stop")
+        if self.logger:
+            self.logger(f"Starting text autoclicker for {len(target_texts)} target(s)")
+            for i, text in enumerate(target_texts):
+                self.logger(f"  {i+1}. '{text}'")
+            self.logger("Press Ctrl+C to stop")
 
         try:
             while not self.stop_flag:
@@ -246,20 +262,24 @@ class AutoClicker:
                         break
                     position = self.find_text(target_text)
                     if position:
-                        print(f"Found text '{target_text}' at {position}, clicking...")
+                        if self.logger:
+                            self.logger(f"Found text '{target_text}' at {position}, clicking...")
                         self.click_at(position)
                         break  # Click the first found target
                 else:
                     if not self.stop_flag:
-                        print("No targets found, waiting...")
+                        if self.logger:
+                            self.logger("No targets found, waiting...")
 
                 if not self.stop_flag:
                     time.sleep(self.interval)
 
         except KeyboardInterrupt:
-            print("\nStopped by user")
+            if self.logger:
+                self.logger("\nStopped by user")
         finally:
-            print("Text autoclicker stopped")
+            if self.logger:
+                self.logger("Text autoclicker stopped")
 
     def run_mixed_clicker(self, targets):
         """Main loop for mixed image and text targets"""
@@ -272,16 +292,17 @@ class AutoClicker:
             else:
                 texts.append(target)
 
-        print(f"Starting mixed autoclicker with {len(images)} image(s) and {len(texts)} text target(s)")
-        if images:
-            print("Images:")
-            for i, img in enumerate(images):
-                print(f"  {i+1}. {img}")
-        if texts:
-            print("Texts:")
-            for i, text in enumerate(texts):
-                print(f"  {i+1}. '{text}'")
-        print("Press Ctrl+C to stop")
+        if self.logger:
+            self.logger(f"Starting mixed autoclicker with {len(images)} image(s) and {len(texts)} text target(s)")
+            if images:
+                self.logger("Images:")
+                for i, img in enumerate(images):
+                    self.logger(f"  {i+1}. {img}")
+            if texts:
+                self.logger("Texts:")
+                for i, text in enumerate(texts):
+                    self.logger(f"  {i+1}. '{text}'")
+            self.logger("Press Ctrl+C to stop")
 
         try:
             while not self.stop_flag:
@@ -291,7 +312,8 @@ class AutoClicker:
                         break
                     position = self.find_image(image_path)
                     if position:
-                        print(f"Found image '{os.path.basename(image_path)}' at {position}, clicking...")
+                        if self.logger:
+                            self.logger(f"Found image '{os.path.basename(image_path)}' at {position}, clicking...")
                         self.click_at(position)
                         break
                 else:
@@ -301,20 +323,24 @@ class AutoClicker:
                             break
                         position = self.find_text(target_text)
                         if position:
-                            print(f"Found text '{target_text}' at {position}, clicking...")
+                            if self.logger:
+                                self.logger(f"Found text '{target_text}' at {position}, clicking...")
                             self.click_at(position)
                             break
                     else:
                         if not self.stop_flag:
-                            print("No targets found, waiting...")
+                            if self.logger:
+                                self.logger("No targets found, waiting...")
 
                 if not self.stop_flag:
                     time.sleep(self.interval)
 
         except KeyboardInterrupt:
-            print("\nStopped by user")
+            if self.logger:
+                self.logger("\nStopped by user")
         finally:
-            print("Mixed autoclicker stopped")
+            if self.logger:
+                self.logger("Mixed autoclicker stopped")
 
 def main():
     # Check if help is requested first

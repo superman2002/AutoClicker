@@ -60,7 +60,7 @@ class AutoClickerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("AutoClicker for Ubuntu")
-        self.root.geometry("500x600")
+        self.root.geometry("500x700")
         self.root.resizable(False, False)
 
         # Make window always on top
@@ -199,7 +199,7 @@ class AutoClickerGUI:
         log_frame = ttk.LabelFrame(self.root, text="Log", padding=10)
         log_frame.pack(fill="x", padx=10, pady=5)
 
-        self.log_text = tk.Text(log_frame, height=6, wrap="word", state="disabled")
+        self.log_text = tk.Text(log_frame, height=12, wrap="word", state="disabled")
         scrollbar = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scrollbar.set)
 
@@ -259,7 +259,11 @@ class AutoClickerGUI:
         self.cache_label.config(text=f"{self.cache_var.get():.2f}")
 
     def log(self, message):
-        """Add message to log"""
+        """Add message to log (thread-safe)"""
+        self.root.after(0, lambda: self._log(message))
+
+    def _log(self, message):
+        """Internal log method - must be called from main thread"""
         self.log_text.config(state="normal")
         self.log_text.insert("end", f"[{time.strftime('%H:%M:%S')}] {message}\n")
         self.log_text.see("end")
@@ -341,7 +345,8 @@ class AutoClickerGUI:
                 confidence=self.confidence_var.get(),
                 interval=self.interval_var.get(),
                 region=region,
-                cache_duration=self.cache_var.get()
+                cache_duration=self.cache_var.get(),
+                logger=self.log
             )
 
             self.running = True
@@ -477,11 +482,11 @@ class RegionSelector:
         self.selector_window = tk.Toplevel(self.parent)
         self.selector_window.attributes('-fullscreen', True)
         self.selector_window.attributes('-topmost', True)
-        self.selector_window.attributes('-alpha', 0.3)  # Semi-transparent
-        self.selector_window.configure(bg='gray')
+        self.selector_window.attributes('-alpha', 0.2)  # Light transparent
+        self.selector_window.configure(bg='white')
 
         # Create canvas for drawing selection rectangle
-        self.canvas = tk.Canvas(self.selector_window, bg='gray', highlightthickness=0)
+        self.canvas = tk.Canvas(self.selector_window, bg='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True)
 
         # Instructions label
@@ -512,7 +517,7 @@ class RegionSelector:
         # Create new rectangle
         self.rect = self.canvas.create_rectangle(
             self.start_x, self.start_y, self.start_x, self.start_y,
-            outline='red', fill='red', stipple='gray50', width=2
+            outline='red', fill='', width=2
         )
 
     def on_mouse_drag(self, event):
