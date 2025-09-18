@@ -57,7 +57,22 @@ except Exception as e:
             print("• Or set: export DISPLAY=:0.0")
 
 class AutoClicker:
-    def __init__(self, confidence=0.8, interval=1.0, region=None, cache_duration=0.5, logger=None):
+    def __init__(self, confidence=0.8, interval=1.0, region=None, cache_duration=0.5, logger=None,
+                 safety_zones=None, max_runtime=None, emergency_stop_keys=None):
+        # Input validation
+        if not (0.0 <= confidence <= 1.0):
+            raise ValueError("Confidence must be between 0.0 and 1.0")
+        if interval <= 0:
+            raise ValueError("Interval must be positive")
+        if cache_duration < 0:
+            raise ValueError("Cache duration must be non-negative")
+        if region and len(region) != 4:
+            raise ValueError("Region must be a tuple of 4 integers (x, y, width, height)")
+        if region and any(r < 0 for r in region):
+            raise ValueError("Region coordinates must be non-negative")
+        if max_runtime and max_runtime <= 0:
+            raise ValueError("Max runtime must be positive")
+
         self.confidence = confidence
         self.interval = interval
         self.region = region  # Format: (x, y, width, height)
@@ -67,6 +82,18 @@ class AutoClicker:
         self.last_screenshot = None
         self.last_screenshot_time = 0
         self.screenshot_cache_duration = cache_duration  # Cache screenshots for specified duration
+
+        # Safety features
+        self.safety_zones = safety_zones or []  # List of (x, y, w, h) tuples to avoid
+        self.max_runtime = max_runtime  # Maximum runtime in seconds
+        self.start_time = None
+        self.emergency_stop_keys = emergency_stop_keys or ['ctrl', 'alt', 'shift']  # Default emergency stop combo
+
+        # Statistics
+        self.click_count = 0
+        self.success_count = 0
+        self.start_time_stats = None
+
         if PYAUTOGUI_AVAILABLE:
             pyautogui.FAILSAFE = True
             pyautogui.PAUSE = 0.5
@@ -76,7 +103,7 @@ class AutoClicker:
                 self.logger(error_msg)
             else:
                 print(error_msg)
-            sys.exit(1)
+            raise RuntimeError("PyAutoGUI not available")
 
     def stop(self):
         """Signal the autoclicker to stop"""
@@ -199,18 +226,75 @@ class AutoClicker:
 
         return None
 
+    def is_in_safety_zone(self, position):
+        """Check if position is within any safety zone"""
+        if not position or not self.safety_zones:
+            return False
+
+        x, y = position
+        for zone in self.safety_zones:
+            zx, zy, zw, zh = zone
+            if zx <= x <= zx + zw and zy <= y <= zy + zh:
+                return True
+        return False
+
+    def check_time_limit(self):
+        """Check if max runtime has been exceeded"""
+        if self.max_runtime and self.start_time:
+            elapsed = time.time() - self.start_time
+            if elapsed >= self.max_runtime:
+                if self.logger:
+                    self.logger(f"Max runtime of {self.max_runtime}s exceeded")
+                return True
+        return False
+
     def click_at(self, position):
-        """Click at the specified position"""
-        if position:
+        """Click at the specified position with safety checks"""
+        if not position:
+            return False
+
+        # Check safety zones
+        if self.is_in_safety_zone(position):
+            if self.logger:
+                self.logger(f"Safety zone violation at {position}, skipping click")
+            return False
+
+        # Check time limit
+        if self.check_time_limit():
+            self.stop_flag = True
+            return False
+
+        try:
             pyautogui.moveTo(position[0], position[1])
             pyautogui.click()
+            self.click_count += 1
+            self.success_count += 1
             return True
-        return False
+        except Exception as e:
+            if self.logger:
+                self.logger(f"Click failed at {position}: {e}")
+            self.click_count += 1
+            return False
+
+    def get_statistics(self):
+        """Get current statistics"""
+        elapsed = time.time() - self.start_time_stats if self.start_time_stats else 0
+        success_rate = (self.success_count / self.click_count * 100) if self.click_count > 0 else 0
+        return {
+            'total_clicks': self.click_count,
+            'successful_clicks': self.success_count,
+            'success_rate': success_rate,
+            'elapsed_time': elapsed
+        }
 
     def run_image_clicker(self, template_paths):
         """Main loop for image-based clicking with multiple templates"""
         if isinstance(template_paths, str):
             template_paths = [template_paths]
+
+        # Initialize timing
+        self.start_time = time.time()
+        self.start_time_stats = time.time()
 
         if self.logger:
             self.logger(f"Starting image autoclicker with {len(template_paths)} template(s)")
@@ -220,6 +304,10 @@ class AutoClicker:
 
         try:
             while not self.stop_flag:
+                # Check time limit
+                if self.check_time_limit():
+                    break
+
                 for template_path in template_paths:
                     if self.stop_flag:
                         break
@@ -242,12 +330,19 @@ class AutoClicker:
                 self.logger("\nStopped by user")
         finally:
             if self.logger:
+                stats = self.get_statistics()
+                self.logger(f"Image autoclicker stopped - Stats: {stats['total_clicks']} clicks, {stats['success_rate']:.1f}% success rate, {stats['elapsed_time']:.1f}s elapsed")
+            if self.logger:
                 self.logger("Image autoclicker stopped")
 
     def run_text_clicker(self, target_texts):
         """Main loop for text-based clicking with multiple targets"""
         if isinstance(target_texts, str):
             target_texts = [target_texts]
+
+        # Initialize timing
+        self.start_time = time.time()
+        self.start_time_stats = time.time()
 
         if self.logger:
             self.logger(f"Starting text autoclicker for {len(target_texts)} target(s)")
@@ -257,6 +352,10 @@ class AutoClicker:
 
         try:
             while not self.stop_flag:
+                # Check time limit
+                if self.check_time_limit():
+                    break
+
                 for target_text in target_texts:
                     if self.stop_flag:
                         break
@@ -279,6 +378,9 @@ class AutoClicker:
                 self.logger("\nStopped by user")
         finally:
             if self.logger:
+                stats = self.get_statistics()
+                self.logger(f"Text autoclicker stopped - Stats: {stats['total_clicks']} clicks, {stats['success_rate']:.1f}% success rate, {stats['elapsed_time']:.1f}s elapsed")
+            if self.logger:
                 self.logger("Text autoclicker stopped")
 
     def run_mixed_clicker(self, targets):
@@ -291,6 +393,10 @@ class AutoClicker:
                 images.append(target)
             else:
                 texts.append(target)
+
+        # Initialize timing
+        self.start_time = time.time()
+        self.start_time_stats = time.time()
 
         if self.logger:
             self.logger(f"Starting mixed autoclicker with {len(images)} image(s) and {len(texts)} text target(s)")
@@ -306,6 +412,10 @@ class AutoClicker:
 
         try:
             while not self.stop_flag:
+                # Check time limit
+                if self.check_time_limit():
+                    break
+
                 # Check images first
                 for image_path in images:
                     if self.stop_flag:
@@ -339,6 +449,9 @@ class AutoClicker:
             if self.logger:
                 self.logger("\nStopped by user")
         finally:
+            if self.logger:
+                stats = self.get_statistics()
+                self.logger(f"Mixed autoclicker stopped - Stats: {stats['total_clicks']} clicks, {stats['success_rate']:.1f}% success rate, {stats['elapsed_time']:.1f}s elapsed")
             if self.logger:
                 self.logger("Mixed autoclicker stopped")
 

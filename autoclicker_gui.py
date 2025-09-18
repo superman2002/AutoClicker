@@ -154,7 +154,33 @@ class AutoClickerGUI:
         # Bind window close event to save settings
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def setup_menu(self):
+        """Set up the menu bar"""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Export Settings", command=self.export_settings)
+        file_menu.add_command(label="Import Settings", command=self.import_settings)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.on_closing)
+
+        # View menu
+        view_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark Mode", command=self.toggle_dark_mode)
+
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self.show_about)
+
     def setup_ui(self):
+        # Create menu bar
+        self.setup_menu()
+
         # Mode selection
         mode_frame = ttk.LabelFrame(self.root, text="Mode", padding=10)
         mode_frame.pack(fill="x", padx=10, pady=5)
@@ -222,10 +248,29 @@ class AutoClickerGUI:
         self.cache_label.grid(row=2, column=2, padx=5, pady=2)
         self.cache_var.trace("w", self.update_cache_label)
 
+        # Max runtime
+        ttk.Label(settings_frame, text="Max Runtime (sec):").grid(row=3, column=0, sticky="w", pady=2)
+        self.max_runtime_var = tk.IntVar(value=0)  # 0 means no limit
+        max_runtime_entry = ttk.Entry(settings_frame, textvariable=self.max_runtime_var, width=10)
+        max_runtime_entry.grid(row=3, column=1, padx=5, pady=2, sticky="w")
+        ttk.Label(settings_frame, text="(0 = no limit)").grid(row=3, column=2, padx=5, pady=2, sticky="w")
+
+        # Safety zones
+        ttk.Label(settings_frame, text="Safety Zones:").grid(row=4, column=0, sticky="w", pady=2)
+        safety_frame = ttk.Frame(settings_frame)
+        safety_frame.grid(row=4, column=1, columnspan=2, sticky="w", pady=2)
+
+        self.safety_zones_text = tk.Text(safety_frame, height=2, width=30, wrap="word")
+        safety_scrollbar = ttk.Scrollbar(safety_frame, orient="vertical", command=self.safety_zones_text.yview)
+        self.safety_zones_text.configure(yscrollcommand=safety_scrollbar.set)
+        self.safety_zones_text.pack(side="left", fill="both", expand=True)
+        safety_scrollbar.pack(side="right", fill="y")
+        self.safety_zones_text.insert("1.0", "# Format: x,y,width,height per line\n# Example: 0,0,100,50")
+
         # Region selection
-        ttk.Label(settings_frame, text="Region (X,Y,W,H):").grid(row=3, column=0, sticky="w", pady=2)
+        ttk.Label(settings_frame, text="Region (X,Y,W,H):").grid(row=5, column=0, sticky="w", pady=2)
         region_frame = ttk.Frame(settings_frame)
-        region_frame.grid(row=3, column=1, columnspan=2, sticky="w", pady=2)
+        region_frame.grid(row=5, column=1, columnspan=2, sticky="w", pady=2)
 
         self.region_vars = []
         for i, label in enumerate(['X:', 'Y:', 'W:', 'H:']):
@@ -242,7 +287,7 @@ class AutoClickerGUI:
         self.region_vars[2].set(screen_width)  # Width
         self.region_vars[3].set(screen_height)  # Height
 
-        ttk.Button(settings_frame, text="Select Region", command=self.select_region).grid(row=4, column=0, columnspan=3, pady=5)
+        ttk.Button(settings_frame, text="Select Region", command=self.select_region).grid(row=6, column=0, columnspan=3, pady=5)
 
         # Control buttons
         control_frame = ttk.Frame(self.root)
@@ -388,6 +433,32 @@ class AutoClickerGUI:
 
         return targets
 
+    def get_safety_zones(self):
+        """Parse safety zones from the text area"""
+        content = self.safety_zones_text.get("1.0", "end-1c")
+        lines = content.split('\n')
+        safety_zones = []
+
+        for line in lines:
+            line = line.strip()
+            # Skip empty lines and comments
+            if line and not line.startswith('#'):
+                try:
+                    # Parse x,y,width,height format
+                    parts = line.split(',')
+                    if len(parts) == 4:
+                        x, y, w, h = map(int, [p.strip() for p in parts])
+                        if x >= 0 and y >= 0 and w > 0 and h > 0:
+                            safety_zones.append((x, y, w, h))
+                        else:
+                            self.log(f"Invalid safety zone coordinates: {line}")
+                    else:
+                        self.log(f"Invalid safety zone format: {line}")
+                except ValueError as e:
+                    self.log(f"Error parsing safety zone '{line}': {e}")
+
+        return safety_zones
+
     def start_autoclicker(self):
         if self.running:
             return
@@ -408,12 +479,17 @@ class AutoClickerGUI:
 
         try:
             region = self.get_region()
+            safety_zones = self.get_safety_zones()
+            max_runtime = self.max_runtime_var.get() if self.max_runtime_var.get() > 0 else None
+
             self.autoclicker = AutoClicker(
                 confidence=self.confidence_var.get(),
                 interval=self.interval_var.get(),
                 region=region,
                 cache_duration=self.cache_var.get(),
-                logger=self.log
+                logger=self.log,
+                safety_zones=safety_zones,
+                max_runtime=max_runtime
             )
 
             self.running = True
@@ -477,6 +553,8 @@ class AutoClickerGUI:
                 "confidence": self.confidence_var.get(),
                 "interval": self.interval_var.get(),
                 "cache_duration": self.cache_var.get(),
+                "max_runtime": self.max_runtime_var.get(),
+                "safety_zones": self.safety_zones_text.get("1.0", "end-1c"),
                 "region": {
                     "x": self.region_vars[0].get(),
                     "y": self.region_vars[1].get(),
@@ -513,6 +591,13 @@ class AutoClickerGUI:
                 if "cache_duration" in settings:
                     self.cache_var.set(settings["cache_duration"])
 
+                if "max_runtime" in settings:
+                    self.max_runtime_var.set(settings["max_runtime"])
+
+                if "safety_zones" in settings:
+                    self.safety_zones_text.delete("1.0", "end")
+                    self.safety_zones_text.insert("1.0", settings["safety_zones"])
+
                 if "region" in settings:
                     region = settings["region"]
                     self.region_vars[0].set(region.get("x", 0))
@@ -526,6 +611,118 @@ class AutoClickerGUI:
 
         except Exception as e:
             print(f"Error loading settings: {e}")
+
+    def export_settings(self):
+        """Export settings to a JSON file"""
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Export Settings"
+        )
+        if filename:
+            try:
+                settings = {
+                    "mode": self.mode_var.get(),
+                    "confidence": self.confidence_var.get(),
+                    "interval": self.interval_var.get(),
+                    "cache_duration": self.cache_var.get(),
+                    "max_runtime": self.max_runtime_var.get(),
+                    "safety_zones": self.safety_zones_text.get("1.0", "end-1c"),
+                    "region": {
+                        "x": self.region_vars[0].get(),
+                        "y": self.region_vars[1].get(),
+                        "width": self.region_vars[2].get(),
+                        "height": self.region_vars[3].get()
+                    },
+                    "targets": self.target_text.get("1.0", "end-1c")
+                }
+
+                with open(filename, 'w') as f:
+                    json.dump(settings, f, indent=2)
+
+                messagebox.showinfo("Export Successful", f"Settings exported to {filename}")
+
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export settings: {e}")
+
+    def import_settings(self):
+        """Import settings from a JSON file"""
+        filename = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Import Settings"
+        )
+        if filename:
+            try:
+                with open(filename, 'r') as f:
+                    settings = json.load(f)
+
+                # Apply loaded settings
+                if "mode" in settings:
+                    self.mode_var.set(settings["mode"])
+                    self.update_mode()
+
+                if "confidence" in settings:
+                    self.confidence_var.set(settings["confidence"])
+
+                if "interval" in settings:
+                    self.interval_var.set(settings["interval"])
+
+                if "cache_duration" in settings:
+                    self.cache_var.set(settings["cache_duration"])
+
+                if "max_runtime" in settings:
+                    self.max_runtime_var.set(settings["max_runtime"])
+
+                if "safety_zones" in settings:
+                    self.safety_zones_text.delete("1.0", "end")
+                    self.safety_zones_text.insert("1.0", settings["safety_zones"])
+
+                if "region" in settings:
+                    region = settings["region"]
+                    self.region_vars[0].set(region.get("x", 0))
+                    self.region_vars[1].set(region.get("y", 0))
+                    self.region_vars[2].set(region.get("width", pyautogui.size()[0]))
+                    self.region_vars[3].set(region.get("height", pyautogui.size()[1]))
+
+                if "targets" in settings:
+                    self.target_text.delete("1.0", "end")
+                    self.target_text.insert("1.0", settings["targets"])
+
+                messagebox.showinfo("Import Successful", f"Settings imported from {filename}")
+
+            except Exception as e:
+                messagebox.showerror("Import Error", f"Failed to import settings: {e}")
+
+    def toggle_dark_mode(self):
+        """Toggle between light and dark mode"""
+        # Simple dark mode implementation
+        current_bg = self.root.cget('bg')
+        if current_bg == 'SystemButtonFace' or current_bg == '':  # Light mode
+            # Switch to dark mode
+            self.root.configure(bg='#2b2b2b')
+            self.log_text.configure(bg='#1e1e1e', fg='#ffffff')
+        else:
+            # Switch to light mode
+            self.root.configure(bg='SystemButtonFace')
+            self.log_text.configure(bg='white', fg='black')
+
+    def show_about(self):
+        """Show about dialog"""
+        about_text = """AutoClicker for Ubuntu
+
+Version: 2.0
+A powerful autoclicker with image and text recognition capabilities.
+
+Features:
+- Image template matching
+- OCR text recognition
+- Mixed mode operation
+- Safety zones
+- Time limits
+- Statistics tracking
+
+Created with safety and reliability in mind."""
+        messagebox.showinfo("About AutoClicker", about_text)
 
     def on_closing(self):
         """Handle window close event"""

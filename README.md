@@ -6,9 +6,21 @@ A Python-based autoclicker that can find and click on user-defined images or tex
 
 - **Image Recognition**: Uses OpenCV template matching to find images on screen
 - **Text Recognition**: Uses Tesseract OCR to find text on screen
+- **Mixed Mode**: Combine image and text targets in a single operation
 - **Mouse Automation**: Automatically moves cursor and clicks on detected targets
-- **Configurable**: Adjustable confidence levels and check intervals
-- **Safe**: Includes failsafe to stop with mouse in corner
+- **Configurable**: Adjustable confidence levels, check intervals, and regions
+- **Safety Features**:
+  - Safety zones to avoid clicking in specific areas
+  - Time limits with automatic stopping
+  - Emergency stop with mouse corner failsafe
+  - Click confirmation dialogs
+- **Statistics Tracking**: Monitor clicks, success rates, and elapsed time
+- **User Interface**:
+  - Always-on-top GUI with keyboard hotkeys
+  - Dark mode support
+  - Export/import settings functionality
+  - Visual region selection tool
+  - Real-time logging and status updates
 
 ## Requirements
 
