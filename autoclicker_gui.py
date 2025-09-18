@@ -7,6 +7,11 @@ import os
 import sys
 import subprocess
 import json
+import threading
+import time
+from tkinter import ttk
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 def detect_display():
     """Detect available X11 display and set DISPLAY environment variable"""
@@ -190,6 +195,8 @@ class AutoClickerGUI:
                        value="text", command=self.update_mode).pack(side="left", padx=10)
         ttk.Radiobutton(mode_frame, text="Image Recognition", variable=self.mode_var,
                        value="image", command=self.update_mode).pack(side="left", padx=10)
+        ttk.Radiobutton(mode_frame, text="Pattern Sequence", variable=self.mode_var,
+                       value="pattern", command=self.update_mode).pack(side="left", padx=10)
 
         # Target input
         target_frame = ttk.LabelFrame(self.root, text="Targets (one per line)", padding=10)
@@ -296,8 +303,45 @@ class AutoClickerGUI:
         self.start_button = ttk.Button(control_frame, text="Start (F6)", command=self.start_autoclicker)
         self.start_button.pack(side="left", padx=5)
 
+        self.pause_button = ttk.Button(control_frame, text="Pause (F8)", command=self.pause_autoclicker, state="disabled")
+        self.pause_button.pack(side="left", padx=5)
+
         self.stop_button = ttk.Button(control_frame, text="Stop (F7)", command=self.stop_autoclicker, state="disabled")
         self.stop_button.pack(side="left", padx=5)
+
+        # Advanced settings
+        advanced_frame = ttk.LabelFrame(self.root, text="Advanced Settings", padding=10)
+        advanced_frame.pack(fill="x", padx=10, pady=5)
+
+        # Sound feedback
+        self.sound_feedback_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(advanced_frame, text="Sound Feedback", variable=self.sound_feedback_var).grid(row=0, column=0, sticky="w", pady=2)
+
+        # Screenshot debug
+        self.screenshot_debug_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(advanced_frame, text="Screenshot Debug", variable=self.screenshot_debug_var).grid(row=0, column=1, sticky="w", pady=2)
+
+        # Hotkey customization
+        ttk.Label(advanced_frame, text="Hotkeys:").grid(row=1, column=0, sticky="w", pady=2)
+        hotkey_frame = ttk.Frame(advanced_frame)
+        hotkey_frame.grid(row=1, column=1, sticky="w", pady=2)
+
+        ttk.Label(hotkey_frame, text="Start:").grid(row=0, column=0)
+        self.hotkey_start_var = tk.StringVar(value="f6")
+        ttk.Entry(hotkey_frame, textvariable=self.hotkey_start_var, width=5).grid(row=0, column=1, padx=2)
+
+        ttk.Label(hotkey_frame, text="Stop:").grid(row=0, column=2)
+        self.hotkey_stop_var = tk.StringVar(value="f7")
+        ttk.Entry(hotkey_frame, textvariable=self.hotkey_stop_var, width=5).grid(row=0, column=3, padx=2)
+
+        ttk.Label(hotkey_frame, text="Pause:").grid(row=0, column=4)
+        self.hotkey_pause_var = tk.StringVar(value="f8")
+        ttk.Entry(hotkey_frame, textvariable=self.hotkey_pause_var, width=5).grid(row=0, column=5, padx=2)
+
+        # Progress bar
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(self.root, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(fill="x", padx=10, pady=5)
 
         # Status
         status_frame = ttk.LabelFrame(self.root, text="Status", padding=10)
@@ -336,6 +380,8 @@ class AutoClickerGUI:
             self.target_text.delete("1.0", "end")
             if mode == "image":
                 self.target_text.insert("1.0", "# Enter image paths (one per line):\n# /path/to/image1.png\n# /path/to/image2.png")
+            elif mode == "pattern":
+                self.target_text.insert("1.0", "# Enter pattern definitions (one per line):\n# {'name': 'My Pattern', 'steps': [{'position': (100, 200)}, {'keyboard': 'enter'}]}")
             else:
                 self.target_text.insert("1.0", "# Enter text targets (one per line):\n# OK\n# Cancel\n# Submit")
 
@@ -482,6 +528,13 @@ class AutoClickerGUI:
             safety_zones = self.get_safety_zones()
             max_runtime = self.max_runtime_var.get() if self.max_runtime_var.get() > 0 else None
 
+            # Setup hotkeys
+            hotkeys = {
+                'start': self.hotkey_start_var.get(),
+                'stop': self.hotkey_stop_var.get(),
+                'pause': self.hotkey_pause_var.get()
+            }
+
             self.autoclicker = AutoClicker(
                 confidence=self.confidence_var.get(),
                 interval=self.interval_var.get(),
@@ -489,11 +542,15 @@ class AutoClickerGUI:
                 cache_duration=self.cache_var.get(),
                 logger=self.log,
                 safety_zones=safety_zones,
-                max_runtime=max_runtime
+                max_runtime=max_runtime,
+                sound_feedback=self.sound_feedback_var.get(),
+                screenshot_debug=self.screenshot_debug_var.get(),
+                hotkeys=hotkeys
             )
 
             self.running = True
             self.start_button.config(state="disabled")
+            self.pause_button.config(state="normal")
             self.stop_button.config(state="normal")
             self.status_var.set("Running...")
             self.status_label.config(foreground="green")
@@ -508,6 +565,24 @@ class AutoClickerGUI:
             messagebox.showerror("Error", f"Failed to start autoclicker: {e}")
             self.log(f"Error: {e}")
 
+    def pause_autoclicker(self):
+        if not self.running or not self.autoclicker:
+            return
+
+        # Toggle pause
+        if self.autoclicker.pause_flag:
+            # Resume
+            self.autoclicker.toggle_pause()
+            self.status_var.set("Running...")
+            self.status_label.config(foreground="green")
+            self.pause_button.config(text="Pause (F8)")
+        else:
+            # Pause
+            self.autoclicker.toggle_pause()
+            self.status_var.set("Paused")
+            self.status_label.config(foreground="orange")
+            self.pause_button.config(text="Resume (F8)")
+
     def stop_autoclicker(self):
         if not self.running:
             return
@@ -518,6 +593,7 @@ class AutoClickerGUI:
             self.autoclicker.stop()
 
         self.start_button.config(state="normal")
+        self.pause_button.config(state="disabled")
         self.stop_button.config(state="disabled")
         self.status_var.set("Stopping...")
         self.status_label.config(foreground="orange")
@@ -529,6 +605,17 @@ class AutoClickerGUI:
                 self.autoclicker.run_image_clicker(targets)
             elif mode == "text":
                 self.autoclicker.run_text_clicker(targets)
+            elif mode == "pattern":
+                # Parse pattern targets
+                patterns = []
+                for target in targets:
+                    try:
+                        pattern = eval(target)  # Simple eval for pattern dict
+                        patterns.append(pattern)
+                    except:
+                        self.log(f"Invalid pattern format: {target}")
+                if patterns:
+                    self.autoclicker.run_pattern_clicker(patterns)
             else:  # mixed mode
                 self.autoclicker.run_mixed_clicker(targets)
         except KeyboardInterrupt:
@@ -541,9 +628,11 @@ class AutoClickerGUI:
 
     def reset_ui(self):
         self.start_button.config(state="normal")
+        self.pause_button.config(state="disabled")
         self.stop_button.config(state="disabled")
         self.status_var.set("Ready")
         self.status_label.config(foreground="blue")
+        self.pause_button.config(text="Pause (F8)")
 
     def save_settings(self):
         """Save current settings to JSON file"""
@@ -561,7 +650,14 @@ class AutoClickerGUI:
                     "width": self.region_vars[2].get(),
                     "height": self.region_vars[3].get()
                 },
-                "targets": self.target_text.get("1.0", "end-1c")
+                "targets": self.target_text.get("1.0", "end-1c"),
+                "sound_feedback": self.sound_feedback_var.get(),
+                "screenshot_debug": self.screenshot_debug_var.get(),
+                "hotkeys": {
+                    "start": self.hotkey_start_var.get(),
+                    "stop": self.hotkey_stop_var.get(),
+                    "pause": self.hotkey_pause_var.get()
+                }
             }
 
             with open(self.settings_file, 'w') as f:
@@ -609,6 +705,18 @@ class AutoClickerGUI:
                     self.target_text.delete("1.0", "end")
                     self.target_text.insert("1.0", settings["targets"])
 
+                if "sound_feedback" in settings:
+                    self.sound_feedback_var.set(settings["sound_feedback"])
+
+                if "screenshot_debug" in settings:
+                    self.screenshot_debug_var.set(settings["screenshot_debug"])
+
+                if "hotkeys" in settings:
+                    hotkeys = settings["hotkeys"]
+                    self.hotkey_start_var.set(hotkeys.get("start", "f6"))
+                    self.hotkey_stop_var.set(hotkeys.get("stop", "f7"))
+                    self.hotkey_pause_var.set(hotkeys.get("pause", "f8"))
+
         except Exception as e:
             print(f"Error loading settings: {e}")
 
@@ -634,7 +742,14 @@ class AutoClickerGUI:
                         "width": self.region_vars[2].get(),
                         "height": self.region_vars[3].get()
                     },
-                    "targets": self.target_text.get("1.0", "end-1c")
+                    "targets": self.target_text.get("1.0", "end-1c"),
+                    "sound_feedback": self.sound_feedback_var.get(),
+                    "screenshot_debug": self.screenshot_debug_var.get(),
+                    "hotkeys": {
+                        "start": self.hotkey_start_var.get(),
+                        "stop": self.hotkey_stop_var.get(),
+                        "pause": self.hotkey_pause_var.get()
+                    }
                 }
 
                 with open(filename, 'w') as f:

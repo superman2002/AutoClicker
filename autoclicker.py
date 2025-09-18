@@ -13,6 +13,10 @@ from PIL import Image
 import os
 import subprocess
 import tempfile
+import threading
+import keyboard
+import playsound
+from pynput import keyboard as pynput_keyboard
 
 # Try to import pyautogui and handle display connection errors
 try:
@@ -58,7 +62,8 @@ except Exception as e:
 
 class AutoClicker:
     def __init__(self, confidence=0.8, interval=1.0, region=None, cache_duration=0.5, logger=None,
-                 safety_zones=None, max_runtime=None, emergency_stop_keys=None):
+                 safety_zones=None, max_runtime=None, emergency_stop_keys=None, click_patterns=None,
+                 keyboard_inputs=None, sound_feedback=False, screenshot_debug=False, hotkeys=None):
         # Input validation
         if not (0.0 <= confidence <= 1.0):
             raise ValueError("Confidence must be between 0.0 and 1.0")
@@ -77,6 +82,7 @@ class AutoClicker:
         self.interval = interval
         self.region = region  # Format: (x, y, width, height)
         self.stop_flag = False  # Flag to signal stopping
+        self.pause_flag = False  # Flag to signal pausing
         self.logger = logger  # Logger callback function
         # Screenshot caching to reduce flickering
         self.last_screenshot = None
@@ -89,10 +95,21 @@ class AutoClicker:
         self.start_time = None
         self.emergency_stop_keys = emergency_stop_keys or ['ctrl', 'alt', 'shift']  # Default emergency stop combo
 
+        # New features
+        self.click_patterns = click_patterns or []  # List of click sequences
+        self.keyboard_inputs = keyboard_inputs or []  # List of keyboard inputs to simulate
+        self.sound_feedback = sound_feedback  # Enable sound feedback
+        self.screenshot_debug = screenshot_debug  # Save screenshots for debugging
+        self.hotkeys = hotkeys or {'start': 'f6', 'stop': 'f7', 'pause': 'f8'}  # Custom hotkeys
+
         # Statistics
         self.click_count = 0
         self.success_count = 0
         self.start_time_stats = None
+
+        # Keyboard listener for hotkeys
+        self.keyboard_listener = None
+        self.setup_hotkeys()
 
         if PYAUTOGUI_AVAILABLE:
             pyautogui.FAILSAFE = True
@@ -105,9 +122,71 @@ class AutoClicker:
                 print(error_msg)
             raise RuntimeError("PyAutoGUI not available")
 
+    def setup_hotkeys(self):
+        """Setup custom hotkeys for start/stop/pause"""
+        try:
+            # Use pynput for better cross-platform hotkey support
+            self.keyboard_listener = pynput_keyboard.Listener(on_press=self.on_hotkey_press)
+            self.keyboard_listener.start()
+        except Exception as e:
+            if self.logger:
+                self.logger(f"Failed to setup hotkeys: {e}")
+
+    def on_hotkey_press(self, key):
+        """Handle hotkey presses"""
+        try:
+            key_str = key.name if hasattr(key, 'name') else str(key).replace("'", "")
+            if key_str == self.hotkeys.get('start', 'f6'):
+                if not self.running:
+                    self.start_autoclicker()
+            elif key_str == self.hotkeys.get('stop', 'f7'):
+                self.stop()
+            elif key_str == self.hotkeys.get('pause', 'f8'):
+                self.toggle_pause()
+        except Exception as e:
+            if self.logger:
+                self.logger(f"Hotkey error: {e}")
+
+    def start_autoclicker(self):
+        """Start the autoclicker (for hotkey use)"""
+        # This would need to be implemented based on current mode/targets
+        pass
+
+    def toggle_pause(self):
+        """Toggle pause/resume functionality"""
+        self.pause_flag = not self.pause_flag
+        if self.logger:
+            if self.pause_flag:
+                self.logger("Autoclicker paused")
+            else:
+                self.logger("Autoclicker resumed")
+
     def stop(self):
         """Signal the autoclicker to stop"""
         self.stop_flag = True
+
+    def play_sound_feedback(self):
+        """Play sound feedback for successful clicks"""
+        if self.sound_feedback:
+            try:
+                # Play a simple beep sound
+                playsound.playsound('beep.wav', block=False)
+            except Exception as e:
+                if self.logger:
+                    self.logger(f"Sound feedback error: {e}")
+
+    def save_debug_screenshot(self, screenshot, filename_suffix="debug"):
+        """Save screenshot for debugging failed detections"""
+        if self.screenshot_debug:
+            try:
+                timestamp = time.strftime("%Y%m%d_%H%M%S")
+                filename = f"debug_screenshot_{timestamp}_{filename_suffix}.png"
+                cv2.imwrite(filename, screenshot)
+                if self.logger:
+                    self.logger(f"Debug screenshot saved: {filename}")
+            except Exception as e:
+                if self.logger:
+                    self.logger(f"Failed to save debug screenshot: {e}")
 
     def capture_screen_flicker_free(self):
         """Capture screen using flicker-free methods (scrot/ImageMagick)"""
@@ -199,6 +278,10 @@ class AutoClicker:
             center_y = max_loc[1] + template_height // 2
             return (center_x, center_y)
 
+        # Save debug screenshot if enabled
+        if self.screenshot_debug:
+            self.save_debug_screenshot(screen, f"failed_match_{os.path.basename(template_path)}")
+
         return None
 
     def find_text(self, target_text):
@@ -224,6 +307,10 @@ class AutoClicker:
 
                 return (center_x, center_y)
 
+        # Save debug screenshot if enabled
+        if self.screenshot_debug:
+            self.save_debug_screenshot(screen, f"failed_ocr_{target_text}")
+
         return None
 
     def is_in_safety_zone(self, position):
@@ -248,6 +335,33 @@ class AutoClicker:
                 return True
         return False
 
+    def simulate_keyboard_input(self, key_input):
+        """Simulate keyboard input"""
+        try:
+            if isinstance(key_input, str):
+                pyautogui.press(key_input)
+            elif isinstance(key_input, list):
+                pyautogui.hotkey(*key_input)
+            if self.logger:
+                self.logger(f"Simulated keyboard input: {key_input}")
+        except Exception as e:
+            if self.logger:
+                self.logger(f"Keyboard input failed: {e}")
+
+    def execute_click_pattern(self, pattern):
+        """Execute a click pattern sequence"""
+        for step in pattern:
+            if self.stop_flag:
+                break
+            if isinstance(step, dict):
+                if 'position' in step:
+                    self.click_at(step['position'])
+                if 'keyboard' in step:
+                    self.simulate_keyboard_input(step['keyboard'])
+                if 'delay' in step:
+                    time.sleep(step['delay'])
+            time.sleep(0.1)  # Small delay between pattern steps
+
     def click_at(self, position):
         """Click at the specified position with safety checks"""
         if not position:
@@ -269,6 +383,7 @@ class AutoClicker:
             pyautogui.click()
             self.click_count += 1
             self.success_count += 1
+            self.play_sound_feedback()  # Play sound feedback
             return True
         except Exception as e:
             if self.logger:
@@ -307,6 +422,10 @@ class AutoClicker:
                 # Check time limit
                 if self.check_time_limit():
                     break
+
+                # Handle pause
+                while self.pause_flag and not self.stop_flag:
+                    time.sleep(0.1)
 
                 for template_path in template_paths:
                     if self.stop_flag:
@@ -356,6 +475,10 @@ class AutoClicker:
                 if self.check_time_limit():
                     break
 
+                # Handle pause
+                while self.pause_flag and not self.stop_flag:
+                    time.sleep(0.1)
+
                 for target_text in target_texts:
                     if self.stop_flag:
                         break
@@ -389,7 +512,7 @@ class AutoClicker:
         texts = []
 
         for target in targets:
-            if target.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')) and os.path.exists(target):
+            if target.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')) and os.path.exists(target):
                 images.append(target)
             else:
                 texts.append(target)
@@ -415,6 +538,10 @@ class AutoClicker:
                 # Check time limit
                 if self.check_time_limit():
                     break
+
+                # Handle pause
+                while self.pause_flag and not self.stop_flag:
+                    time.sleep(0.1)
 
                 # Check images first
                 for image_path in images:
@@ -455,12 +582,56 @@ class AutoClicker:
             if self.logger:
                 self.logger("Mixed autoclicker stopped")
 
+    def run_pattern_clicker(self, patterns):
+        """Main loop for click pattern sequences"""
+        if isinstance(patterns, dict):
+            patterns = [patterns]
+
+        # Initialize timing
+        self.start_time = time.time()
+        self.start_time_stats = time.time()
+
+        if self.logger:
+            self.logger(f"Starting pattern autoclicker with {len(patterns)} pattern(s)")
+            self.logger("Press Ctrl+C to stop")
+
+        try:
+            while not self.stop_flag:
+                # Check time limit
+                if self.check_time_limit():
+                    break
+
+                # Handle pause
+                while self.pause_flag and not self.stop_flag:
+                    time.sleep(0.1)
+
+                for pattern in patterns:
+                    if self.stop_flag:
+                        break
+                    if self.logger:
+                        self.logger(f"Executing pattern: {pattern.get('name', 'Unnamed')}")
+                    self.execute_click_pattern(pattern.get('steps', []))
+                    break  # Execute one pattern per cycle
+
+                if not self.stop_flag:
+                    time.sleep(self.interval)
+
+        except KeyboardInterrupt:
+            if self.logger:
+                self.logger("\nStopped by user")
+        finally:
+            if self.logger:
+                stats = self.get_statistics()
+                self.logger(f"Pattern autoclicker stopped - Stats: {stats['total_clicks']} clicks, {stats['success_rate']:.1f}% success rate, {stats['elapsed_time']:.1f}s elapsed")
+            if self.logger:
+                self.logger("Pattern autoclicker stopped")
+
 def main():
     # Check if help is requested first
     if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help']:
         parser = argparse.ArgumentParser(description='AutoClicker for Ubuntu')
-        parser.add_argument('--mode', choices=['image', 'text', 'mixed'], required=True,
-                           help='Mode: image for template matching, text for OCR, mixed for both')
+        parser.add_argument('--mode', choices=['image', 'text', 'mixed', 'pattern'], required=True,
+                           help='Mode: image for template matching, text for OCR, mixed for both, pattern for sequences')
         parser.add_argument('--target', action='append', required=True,
                            help='Target(s): path to template image or target text (can be used multiple times)')
         parser.add_argument('--confidence', type=float, default=0.8,
@@ -469,6 +640,16 @@ def main():
                            help='Check interval in seconds')
         parser.add_argument('--region', nargs=4, type=int, metavar=('X', 'Y', 'WIDTH', 'HEIGHT'),
                            help='Search region as X Y WIDTH HEIGHT (e.g., --region 100 100 800 600)')
+        parser.add_argument('--sound-feedback', action='store_true',
+                           help='Enable sound feedback for successful clicks')
+        parser.add_argument('--screenshot-debug', action='store_true',
+                           help='Save screenshots for debugging failed detections')
+        parser.add_argument('--hotkey-start', type=str, default='f6',
+                           help='Hotkey to start autoclicker')
+        parser.add_argument('--hotkey-stop', type=str, default='f7',
+                           help='Hotkey to stop autoclicker')
+        parser.add_argument('--hotkey-pause', type=str, default='f8',
+                           help='Hotkey to pause/resume autoclicker')
         parser.print_help()
         return
 
@@ -480,8 +661,8 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description='AutoClicker for Ubuntu')
-    parser.add_argument('--mode', choices=['image', 'text', 'mixed'], required=True,
-                       help='Mode: image for template matching, text for OCR, mixed for both')
+    parser.add_argument('--mode', choices=['image', 'text', 'mixed', 'pattern'], required=True,
+                       help='Mode: image for template matching, text for OCR, mixed for both, pattern for sequences')
     parser.add_argument('--target', action='append', required=True,
                        help='Target(s): path to template image or target text (can be used multiple times)')
     parser.add_argument('--confidence', type=float, default=0.8,
@@ -490,6 +671,16 @@ def main():
                        help='Check interval in seconds')
     parser.add_argument('--region', nargs=4, type=int, metavar=('X', 'Y', 'WIDTH', 'HEIGHT'),
                        help='Search region as X Y WIDTH HEIGHT (e.g., --region 100 100 800 600)')
+    parser.add_argument('--sound-feedback', action='store_true',
+                       help='Enable sound feedback for successful clicks')
+    parser.add_argument('--screenshot-debug', action='store_true',
+                       help='Save screenshots for debugging failed detections')
+    parser.add_argument('--hotkey-start', type=str, default='f6',
+                       help='Hotkey to start autoclicker')
+    parser.add_argument('--hotkey-stop', type=str, default='f7',
+                       help='Hotkey to stop autoclicker')
+    parser.add_argument('--hotkey-pause', type=str, default='f8',
+                       help='Hotkey to pause/resume autoclicker')
 
     args = parser.parse_args()
 
@@ -507,7 +698,21 @@ def main():
         region = tuple(args.region)
         print(f"Using search region: {region}")
 
-    clicker = AutoClicker(confidence=args.confidence, interval=args.interval, region=region)
+    # Setup hotkeys
+    hotkeys = {
+        'start': args.hotkey_start,
+        'stop': args.hotkey_stop,
+        'pause': args.hotkey_pause
+    }
+
+    clicker = AutoClicker(
+        confidence=args.confidence,
+        interval=args.interval,
+        region=region,
+        sound_feedback=args.sound_feedback,
+        screenshot_debug=args.screenshot_debug,
+        hotkeys=hotkeys
+    )
 
     if args.mode == 'image':
         clicker.run_image_clicker(targets)
@@ -515,6 +720,16 @@ def main():
         clicker.run_text_clicker(targets)
     elif args.mode == 'mixed':
         clicker.run_mixed_clicker(targets)
+    elif args.mode == 'pattern':
+        # For pattern mode, targets should be pattern definitions
+        patterns = []
+        for target in targets:
+            try:
+                pattern = eval(target)  # Simple eval for pattern dict
+                patterns.append(pattern)
+            except:
+                print(f"Invalid pattern format: {target}")
+        clicker.run_pattern_clicker(patterns)
 
 if __name__ == "__main__":
     main()
