@@ -6,39 +6,39 @@ This document outlines planned improvements and features for the AutoClicker pro
 - [ ] Add click patterns/sequences (e.g., click A then B then C in order)
 - [ ] Implement keyboard input simulation alongside mouse clicks
 - [ ] Add pause/resume functionality during operation
-- [ ] Include click statistics (total clicks, success rate, time elapsed)
+- [x] Include click statistics (total clicks, success rate, time elapsed)
 - [ ] Add sound feedback for successful clicks
 - [ ] Implement hotkey customization in settings
 - [ ] Add screenshot saving for debugging failed detections
 
 ## User Experience Improvements
-- [ ] Create dark mode theme option
-- [ ] Add tooltips and help text throughout the UI
+- [x] Create dark mode theme option
+- [x] Add tooltips and help text throughout the UI
 - [ ] Implement progress bars for long-running operations
 - [ ] Create better responsive UI layout
-- [ ] Add icons and visual improvements
+- [x] Add icons and visual improvements
 
 ## Configuration & Safety
-- [ ] Add export/import settings functionality
-- [ ] Create configuration profiles for different use cases
+- [x] Add export/import settings functionality
+- [x] Create configuration profiles for different use cases
 - [ ] Add command-line arguments support for GUI startup
-- [ ] Implement safety zones (areas to avoid clicking)
-- [ ] Add time limits and automatic stopping
-- [ ] Create emergency stop with multiple key combinations
-- [ ] Add click confirmation dialogs for safety
+- [x] Implement safety zones (areas to avoid clicking)
+- [x] Add time limits and automatic stopping
+- [x] Create emergency stop with multiple key combinations
+- [x] Add click confirmation dialogs for safety
 
 ## Technical Improvements
-- [ ] Improve error handling with more specific error messages
-- [ ] Add input validation for all user inputs
+- [x] Improve error handling with more specific error messages
+- [x] Add input validation for all user inputs
 - [ ] Add unit tests for core functionality
-- [ ] Optimize image processing performance
+- [x] Optimize image processing performance
 - [ ] Improve OCR accuracy with preprocessing options
 - [ ] Add support for more image formats (WebP, TIFF, etc.)
 - [ ] Add cross-platform support (Windows/Mac testing)
 - [ ] Implement Wayland support for Linux
 
 ## Documentation & Support
-- [ ] Improve README with screenshots and examples
+- [x] Improve README with screenshots and examples
 - [ ] Create user guide and troubleshooting documentation
 
 ## Priority Levels
