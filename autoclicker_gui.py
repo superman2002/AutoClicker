@@ -129,7 +129,7 @@ except Exception as e:
 from autoclicker import AutoClicker
 
 class AutoClickerGUI:
-    def __init__(self, root):
+    def __init__(self, root, args=None):
         self.root = root
         self.root.title("AutoClicker for Ubuntu")
         self.root.geometry("500x700")
@@ -154,10 +154,41 @@ class AutoClickerGUI:
         self.setup_ui()
         self.setup_hotkeys()
         self.load_settings()  # Load saved settings
+
+        # Apply command-line arguments if provided
+        if args:
+            self.apply_args(args)
+
         self.log("Hotkeys: F6=Start, F7=Stop")
 
         # Bind window close event to save settings
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def apply_args(self, args):
+        """Apply command-line arguments to pre-populate the GUI"""
+        if args.mode:
+            self.mode_var.set(args.mode)
+            self.update_mode()
+
+        if args.target:
+            # Clear example text
+            self.target_text.delete("1.0", "end")
+            # Add targets
+            for target in args.target:
+                self.target_text.insert("end", target + "\n")
+
+        if args.confidence:
+            self.confidence_var.set(args.confidence)
+
+        if args.interval:
+            self.interval_var.set(args.interval)
+
+        if args.region:
+            x, y, w, h = args.region
+            self.region_vars[0].set(x)  # X
+            self.region_vars[1].set(y)  # Y
+            self.region_vars[2].set(w)  # Width
+            self.region_vars[3].set(h)  # Height
 
     def setup_menu(self):
         """Set up the menu bar"""
@@ -388,7 +419,7 @@ class AutoClickerGUI:
     def browse_file(self):
         filename = filedialog.askopenfilename(
             title="Select Template Image",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp *.tiff"), ("All files", "*.*")]
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp *.tiff *.tif *.webp"), ("All files", "*.*")]
         )
         if filename:
             # Clear example text if present
@@ -930,9 +961,20 @@ class RegionSelector:
         self.callback(None)
 
 def main():
-    root = tk.Tk()
-    app = AutoClickerGUI(root)
-    root.mainloop()
+    import argparse
 
-if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='AutoClicker GUI for Ubuntu')
+    parser.add_argument('--mode', choices=['image', 'text', 'mixed', 'pattern'],
+                       help='Pre-select mode: image, text, mixed, or pattern')
+    parser.add_argument('--target', action='append',
+                       help='Pre-load target(s): path to template image or target text (can be used multiple times)')
+    parser.add_argument('--confidence', type=float, default=0.8,
+                       help='Pre-set confidence threshold (0.0-1.0)')
+    parser.add_argument('--interval', type=float, default=1.0,
+                       help='Pre-set check interval in seconds')
+    parser.add_argument('--region', nargs=4, type=int, metavar=('X', 'Y', 'WIDTH', 'HEIGHT'),
+                       help='Pre-set search region as X Y WIDTH HEIGHT')
+
+    args = parser.parse_args()
+
+    root = tk.Tk()

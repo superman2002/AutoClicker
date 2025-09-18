@@ -21,7 +21,7 @@ This document outlines planned improvements and features for the AutoClicker pro
 ## Configuration & Safety
 - [x] Add export/import settings functionality
 - [x] Create configuration profiles for different use cases
-- [ ] Add command-line arguments support for GUI startup
+- [x] Add command-line arguments support for GUI startup
 - [x] Implement safety zones (areas to avoid clicking)
 - [x] Add time limits and automatic stopping
 - [x] Create emergency stop with multiple key combinations
@@ -30,16 +30,16 @@ This document outlines planned improvements and features for the AutoClicker pro
 ## Technical Improvements
 - [x] Improve error handling with more specific error messages
 - [x] Add input validation for all user inputs
-- [ ] Add unit tests for core functionality
+- [x] Add unit tests for core functionality
 - [x] Optimize image processing performance
-- [ ] Improve OCR accuracy with preprocessing options
-- [ ] Add support for more image formats (WebP, TIFF, etc.)
+- [x] Improve OCR accuracy with preprocessing options
+- [x] Add support for more image formats (WebP, TIFF, etc.)
 - [ ] Add cross-platform support (Windows/Mac testing)
 - [ ] Implement Wayland support for Linux
 
 ## Documentation & Support
 - [x] Improve README with screenshots and examples
-- [ ] Create user guide and troubleshooting documentation
+- [x] Create user guide and troubleshooting documentation
 
 ## Priority Levels
 - **High Priority**: Error handling, input validation, safety features, documentation

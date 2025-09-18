@@ -259,8 +259,30 @@ class AutoClicker:
                 self.logger(f"Template image not found: {template_path}")
             return None
 
+        # Check supported image formats
+        supported_extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.tif', '.webp']
+        file_ext = os.path.splitext(template_path)[1].lower()
+
+        if file_ext not in supported_extensions:
+            if self.logger:
+                self.logger(f"Unsupported image format: {file_ext}. Supported: {', '.join(supported_extensions)}")
+            return None
+
         screen = self.capture_screen()
-        template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+
+        # Try different flags for different image formats
+        template = None
+        load_flags = [cv2.IMREAD_COLOR, cv2.IMREAD_GRAYSCALE, cv2.IMREAD_UNCHANGED]
+
+        for flag in load_flags:
+            template = cv2.imread(template_path, flag)
+            if template is not None:
+                # Convert to 3-channel color image if necessary
+                if len(template.shape) == 2:  # Grayscale
+                    template = cv2.cvtColor(template, cv2.COLOR_GRAY2BGR)
+                elif len(template.shape) == 3 and template.shape[2] == 4:  # RGBA
+                    template = cv2.cvtColor(template, cv2.COLOR_BGRA2BGR)
+                break
 
         if template is None:
             if self.logger:
@@ -284,10 +306,87 @@ class AutoClicker:
 
         return None
 
-    def find_text(self, target_text):
-        """Find text on screen using OCR"""
+    def preprocess_image_for_ocr(self, image):
+        """Apply preprocessing to improve OCR accuracy"""
+        # Convert to grayscale
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image.copy()
+
+        # Apply different preprocessing techniques
+        preprocessed_images = []
+
+        # Original grayscale
+        preprocessed_images.append(('original', gray))
+
+        # Gaussian blur to reduce noise
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        preprocessed_images.append(('blurred', blurred))
+
+        # Thresholding - Otsu's method
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        preprocessed_images.append(('threshold', thresh))
+
+        # Adaptive thresholding
+        adaptive_thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                               cv2.THRESH_BINARY, 11, 2)
+        preprocessed_images.append(('adaptive_threshold', adaptive_thresh))
+
+        # Morphological operations to clean up text
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        morphed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        preprocessed_images.append(('morphology', morphed))
+
+        # Contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+        preprocessed_images.append(('enhanced', enhanced))
+
+        # Bilateral filter for noise reduction while keeping edges
+        bilateral = cv2.bilateralFilter(gray, 9, 75, 75)
+        preprocessed_images.append(('bilateral', bilateral))
+
+        return preprocessed_images
+
+    def find_text(self, target_text, use_preprocessing=True):
+        """Find text on screen using OCR with optional preprocessing"""
         screen = self.capture_screen()
-        # Convert to grayscale for better OCR
+
+        if use_preprocessing:
+            # Try different preprocessing methods
+            preprocessed_images = self.preprocess_image_for_ocr(screen)
+
+            for method_name, processed_img in preprocessed_images:
+                try:
+                    # Use pytesseract to get text data with bounding boxes
+                    data = pytesseract.image_to_data(processed_img, output_type=pytesseract.Output.DICT)
+
+                    for i, text in enumerate(data['text']):
+                        if target_text.lower() in text.lower():
+                            # Get bounding box
+                            x = data['left'][i]
+                            y = data['top'][i]
+                            w = data['width'][i]
+                            h = data['height'][i]
+
+                            # Calculate center
+                            center_x = x + w // 2
+                            center_y = y + h // 2
+
+                            if self.logger:
+                                self.logger(f"Found text '{target_text}' using {method_name} preprocessing at {center_x}, {center_y}")
+                            return (center_x, center_y)
+                except Exception as e:
+                    if self.logger:
+                        self.logger(f"OCR preprocessing method '{method_name}' failed: {e}")
+                    continue
+
+            # If no preprocessing method worked, fall back to basic method
+            if self.logger:
+                self.logger("All OCR preprocessing methods failed, using basic OCR")
+
+        # Basic OCR without preprocessing
         gray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
 
         # Use pytesseract to get text data with bounding boxes
@@ -512,7 +611,7 @@ class AutoClicker:
         texts = []
 
         for target in targets:
-            if target.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')) and os.path.exists(target):
+            if target.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.tif', '.webp')) and os.path.exists(target):
                 images.append(target)
             else:
                 texts.append(target)
