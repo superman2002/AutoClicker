@@ -1,0 +1,53 @@
+# AutoClicker Project Roadmap
+
+This document outlines planned improvements and features for the AutoClicker project.
+
+## Feature Enhancements
+- [ ] Add click patterns/sequences (e.g., click A then B then C in order)
+- [ ] Implement keyboard input simulation alongside mouse clicks
+- [ ] Add pause/resume functionality during operation
+- [ ] Include click statistics (total clicks, success rate, time elapsed)
+- [ ] Add sound feedback for successful clicks
+- [ ] Implement hotkey customization in settings
+- [ ] Add screenshot saving for debugging failed detections
+
+## User Experience Improvements
+- [ ] Create dark mode theme option
+- [ ] Add tooltips and help text throughout the UI
+- [ ] Implement progress bars for long-running operations
+- [ ] Create better responsive UI layout
+- [ ] Add icons and visual improvements
+
+## Configuration & Safety
+- [ ] Add export/import settings functionality
+- [ ] Create configuration profiles for different use cases
+- [ ] Add command-line arguments support for GUI startup
+- [ ] Implement safety zones (areas to avoid clicking)
+- [ ] Add time limits and automatic stopping
+- [ ] Create emergency stop with multiple key combinations
+- [ ] Add click confirmation dialogs for safety
+
+## Technical Improvements
+- [ ] Improve error handling with more specific error messages
+- [ ] Add input validation for all user inputs
+- [ ] Add unit tests for core functionality
+- [ ] Optimize image processing performance
+- [ ] Improve OCR accuracy with preprocessing options
+- [ ] Add support for more image formats (WebP, TIFF, etc.)
+- [ ] Add cross-platform support (Windows/Mac testing)
+- [ ] Implement Wayland support for Linux
+
+## Documentation & Support
+- [ ] Improve README with screenshots and examples
+- [ ] Create user guide and troubleshooting documentation
+
+## Priority Levels
+- **High Priority**: Error handling, input validation, safety features, documentation
+- **Medium Priority**: UI improvements, configuration features, performance optimization
+- **Low Priority**: Advanced features (patterns, keyboard simulation), cross-platform support
+
+## Implementation Notes
+- Focus on safety features first to prevent accidental system interactions
+- Ensure all new features maintain backward compatibility
+- Add comprehensive testing for critical functionality
+- Consider user feedback when prioritizing features
