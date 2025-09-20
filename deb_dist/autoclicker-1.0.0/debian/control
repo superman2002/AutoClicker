@@ -1,0 +1,33 @@
+Source: autoclicker
+Maintainer: None <None>
+Section: utils
+Priority: optional
+Build-Depends: python3-setuptools, python3-all, debhelper (>= 12)
+Standards-Version: 4.7.0
+Homepage: https://github.com/superman2002/AutoClicker
+
+Package: python3-autoclicker
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: AutoClicker for Ubuntu - Finds and clicks on user-defined im
+ # AutoClicker for Ubuntu
+ .
+ A Python-based autoclicker that can find and click on user-defined images or text on screen using computer vision and OCR.
+ .
+ ## Features
+ .
+ - **Image Recognition**: Uses OpenCV template matching to find images on screen
+ - **Text Recognition**: Uses Tesseract OCR to find text on screen
+ - **Mixed Mode**: Combine image and text targets in a single operation
+ - **Mouse Automation**: Automatically moves cursor and clicks on detected targets
+ - **Configurable**: Adjustable confidence levels, check intervals, and regions
+ - **Safety Features**:
+   - Safety zones to avoid clicking in specific areas
+   - Time limits with automatic stopping
+   - Emergency stop with mouse corner failsafe
+   - Click confirmation dialogs
+ - **Statistics Tracking**: Monitor clicks, success rates, and elapsed time
+ - **User Interface**:
+   - Always-on-top GUI with keyboard hotkeys
+   - Dark mode support
+

@@ -1,0 +1,3 @@
+[console_scripts]
+autoclicker = autoclicker:main
+autoclicker-gui = autoclicker_gui:main

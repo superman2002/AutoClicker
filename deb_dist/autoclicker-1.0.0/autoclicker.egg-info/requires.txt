@@ -1,0 +1,8 @@
+pyautogui>=0.9.53
+opencv-python>=4.8.0
+pytesseract>=0.3.10
+Pillow>=9.0.0
+numpy>=1.21.0
+pygame>=2.0.0
+pynput>=1.7.6
+keyboard>=0.13.5

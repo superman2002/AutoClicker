@@ -1,0 +1,26 @@
+Format: 1.8
+Date: Sat, 20 Sep 2025 08:52:46 +0200
+Source: autoclicker
+Binary: python3-autoclicker
+Built-For-Profiles: noudeb
+Architecture: all
+Version: 1.0.0-1
+Distribution: unstable
+Urgency: low
+Maintainer: None <None>
+Changed-By: None <None>
+Description:
+ python3-autoclicker - AutoClicker for Ubuntu - Finds and clicks on user-defined im
+Changes:
+ autoclicker (1.0.0-1) unstable; urgency=low
+ .
+   * source package automatically created by stdeb 0.11.0
+Checksums-Sha1:
+ ec9c399eb685cb0d6907bf802de8c0019b65dae2 7567 autoclicker_1.0.0-1_amd64.buildinfo
+ 708dbc382cd61ae51f7b6eec4738d20589601408 26778 python3-autoclicker_1.0.0-1_all.deb
+Checksums-Sha256:
+ 62d39fe7705bcd4371f2dd68508dd7c75dd4147e218ca8798368f3f0d2eb424f 7567 autoclicker_1.0.0-1_amd64.buildinfo
+ 1b6dd6ba66538364b75691fecee8be335fa08df157e45c150ecc84165ceec7ab 26778 python3-autoclicker_1.0.0-1_all.deb
+Files:
+ 1e7fd552dd02e81d5d1bebd39e5064ee 7567 utils optional autoclicker_1.0.0-1_amd64.buildinfo
+ 220a4c7340904884fc3332b048a08c55 26778 utils optional python3-autoclicker_1.0.0-1_all.deb
