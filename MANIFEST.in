@@ -1,0 +1,4 @@
+include requirements.txt
+include *.sh
+include *.md
+include *.json
