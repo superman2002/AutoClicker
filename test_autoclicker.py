@@ -200,23 +200,31 @@ class TestAutoClicker(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(clicker.click_count, 0)
 
-    @patch('autoclicker.playsound.playsound')
-    def test_sound_feedback_enabled(self, mock_playsound):
+    @patch('pygame.mixer.init')
+    @patch('pygame.sndarray.make_sound')
+    def test_sound_feedback_enabled(self, mock_make_sound, mock_mixer_init):
         """Test sound feedback when enabled"""
+        mock_sound = Mock()
+        mock_make_sound.return_value = mock_sound
+
         clicker = AutoClicker(sound_feedback=True)
 
         clicker.play_sound_feedback()
 
-        mock_playsound.assert_called_once()
+        mock_mixer_init.assert_called_once()
+        mock_make_sound.assert_called_once()
+        mock_sound.play.assert_called_once()
 
-    @patch('autoclicker.playsound.playsound')
-    def test_sound_feedback_disabled(self, mock_playsound):
+    @patch('pygame.mixer.init')
+    @patch('pygame.sndarray.make_sound')
+    def test_sound_feedback_disabled(self, mock_make_sound, mock_mixer_init):
         """Test sound feedback when disabled"""
         clicker = AutoClicker(sound_feedback=False)
 
         clicker.play_sound_feedback()
 
-        mock_playsound.assert_not_called()
+        mock_mixer_init.assert_not_called()
+        mock_make_sound.assert_not_called()
 
     def test_toggle_pause(self):
         """Test pause toggle functionality"""

@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 import threading
 import keyboard
-import playsound
+import pygame
 from pynput import keyboard as pynput_keyboard
 
 # Try to import pyautogui and handle display connection errors
@@ -75,7 +75,7 @@ class AutoClicker:
             raise ValueError("Region must be a tuple of 4 integers (x, y, width, height)")
         if region and any(r < 0 for r in region):
             raise ValueError("Region coordinates must be non-negative")
-        if max_runtime and max_runtime <= 0:
+        if max_runtime is not None and max_runtime <= 0:
             raise ValueError("Max runtime must be positive")
 
         self.confidence = confidence
@@ -169,8 +169,27 @@ class AutoClicker:
         """Play sound feedback for successful clicks"""
         if self.sound_feedback:
             try:
-                # Play a simple beep sound
-                playsound.playsound('beep.wav', block=False)
+                # Initialize pygame mixer if not already initialized
+                if not pygame.mixer.get_init():
+                    pygame.mixer.init()
+
+                # Generate a simple beep sound using pygame
+                sample_rate = 44100
+                duration = 0.1  # 100ms beep
+                frequency = 800  # 800Hz beep
+
+                # Generate sine wave
+                t = np.linspace(0, duration, int(sample_rate * duration), False)
+                wave = np.sin(frequency * 2 * np.pi * t)
+
+                # Convert to 16-bit signed integers
+                wave = (wave * 32767).astype(np.int16)
+
+                # Create pygame sound object
+                sound = pygame.sndarray.make_sound(wave)
+
+                # Play the sound (non-blocking)
+                sound.play()
             except Exception as e:
                 if self.logger:
                     self.logger(f"Sound feedback error: {e}")

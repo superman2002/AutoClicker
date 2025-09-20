@@ -961,6 +961,7 @@ class RegionSelector:
         self.callback(None)
 
 def main():
+    print("GUI starting...")
     import argparse
 
     parser = argparse.ArgumentParser(description='AutoClicker GUI for Ubuntu')
@@ -978,3 +979,9 @@ def main():
     args = parser.parse_args()
 
     root = tk.Tk()
+    gui = AutoClickerGUI(root, args)
+    root.lift()  # Bring window to front
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
