@@ -1,17 +1,20 @@
 Format: 1.0
 Source: autoclicker
 Binary: python3-autoclicker
-Architecture: all
+Architecture: all source
 Version: 1.0.0-1
 Checksums-Md5:
- 220a4c7340904884fc3332b048a08c55 26778 python3-autoclicker_1.0.0-1_all.deb
+ bd01bbe60e673b35686503d2d99de0d6 886 autoclicker_1.0.0-1.dsc
+ 22fbfa983124749ea7811cf34f2a60f8 20178 python3-autoclicker_1.0.0-1_all.deb
 Checksums-Sha1:
- 708dbc382cd61ae51f7b6eec4738d20589601408 26778 python3-autoclicker_1.0.0-1_all.deb
+ c9e7ea078484ad19040ec9dd4a825bda83a9754b 886 autoclicker_1.0.0-1.dsc
+ 39b5ca7c7497d37eb3955ee67f389537fde60da0 20178 python3-autoclicker_1.0.0-1_all.deb
 Checksums-Sha256:
- 1b6dd6ba66538364b75691fecee8be335fa08df157e45c150ecc84165ceec7ab 26778 python3-autoclicker_1.0.0-1_all.deb
+ 0cd6ca593a9f986c807e3205955f7a563a323687786c03832b2f4a1138184eb6 886 autoclicker_1.0.0-1.dsc
+ 625087cd1879a2c6fa5125ffd189965767451f0909651bb9078deadf8b323902 20178 python3-autoclicker_1.0.0-1_all.deb
 Build-Origin: Ubuntu
 Build-Architecture: amd64
-Build-Date: Sat, 20 Sep 2025 08:52:59 +0200
+Build-Date: Sat, 20 Sep 2025 17:07:00 +0200
 Build-Tainted-By:
  merged-usr-via-aliased-dirs
  usr-local-has-libraries
@@ -219,4 +222,4 @@ Environment:
  LC_PAPER="en_GB.UTF-8"
  LC_TELEPHONE="en_GB.UTF-8"
  LC_TIME="en_GB.UTF-8"
- SOURCE_DATE_EPOCH="1758351166"
+ SOURCE_DATE_EPOCH="1758380808"

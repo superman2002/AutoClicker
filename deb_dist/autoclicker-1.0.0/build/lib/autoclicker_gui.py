@@ -843,14 +843,37 @@ class AutoClickerGUI:
         """Toggle between light and dark mode"""
         # Simple dark mode implementation
         current_bg = self.root.cget('bg')
-        if current_bg == 'SystemButtonFace' or current_bg == '':  # Light mode
+        # Check if we're in light mode (default Tkinter colors on Linux are usually light)
+        if current_bg in ('SystemButtonFace', '#d9d9d9', '#f0f0f0', '') or not current_bg.startswith('#2b2b2b'):
             # Switch to dark mode
             self.root.configure(bg='#2b2b2b')
             self.log_text.configure(bg='#1e1e1e', fg='#ffffff')
+            # Also update other widgets to dark theme
+            self._apply_dark_theme()
         else:
             # Switch to light mode
-            self.root.configure(bg='SystemButtonFace')
+            self.root.configure(bg='#f0f0f0')  # Use a standard light gray instead of SystemButtonFace
             self.log_text.configure(bg='white', fg='black')
+            # Also update other widgets to light theme
+            self._apply_light_theme()
+
+    def _apply_dark_theme(self):
+        """Apply dark theme to all widgets"""
+        dark_bg = '#2b2b2b'
+        dark_fg = '#ffffff'
+        # Update main frames
+        for widget in self.root.winfo_children():
+            if isinstance(widget, (ttk.LabelFrame, ttk.Frame)):
+                widget.configure(style='Dark.TFrame' if hasattr(widget, 'configure') else None)
+
+    def _apply_light_theme(self):
+        """Apply light theme to all widgets"""
+        light_bg = '#f0f0f0'
+        light_fg = '#000000'
+        # Update main frames
+        for widget in self.root.winfo_children():
+            if isinstance(widget, (ttk.LabelFrame, ttk.Frame)):
+                widget.configure(style='TFrame' if hasattr(widget, 'configure') else None)
 
     def show_about(self):
         """Show about dialog"""

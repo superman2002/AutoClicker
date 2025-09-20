@@ -4,18 +4,31 @@ import os
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
-# Include shell scripts and other files
+# Include shell scripts and other files (excluding build/development files)
+excluded_files = [
+    'autoclicker_settings.json',
+    'build_deb.sh',
+    'diagnose.sh',
+    'run.sh',
+    'run_gui.sh',
+    'test_autoclicker.sh',
+    'test_gui.sh',
+    'README.md',
+    'USER_GUIDE.md'
+]
+
 data_files = []
 for root, dirs, files in os.walk('.'):
     for file in files:
         if file.endswith('.sh') or file in ['README.md', 'USER_GUIDE.md', 'autoclicker_settings.json']:
-            data_files.append((os.path.join('share', 'autoclicker', root[2:]), [os.path.join(root, file)]))
+            if file not in excluded_files:
+                data_files.append((os.path.join('share', 'autoclicker', root[2:]), [os.path.join(root, file)]))
 
 setup(
     name="autoclicker",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Menno Vermeij",
+    author_email="superman.2002.mv@gmail.com",
     description="AutoClicker for Ubuntu - Finds and clicks on user-defined images or text",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

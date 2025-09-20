@@ -1,9 +1,9 @@
 Format: 1.8
-Date: Sat, 20 Sep 2025 08:52:46 +0200
+Date: Sat, 20 Sep 2025 17:06:48 +0200
 Source: autoclicker
 Binary: python3-autoclicker
 Built-For-Profiles: noudeb
-Architecture: all
+Architecture: source all
 Version: 1.0.0-1
 Distribution: unstable
 Urgency: low
@@ -16,11 +16,20 @@ Changes:
  .
    * source package automatically created by stdeb 0.11.0
 Checksums-Sha1:
- ec9c399eb685cb0d6907bf802de8c0019b65dae2 7567 autoclicker_1.0.0-1_amd64.buildinfo
- 708dbc382cd61ae51f7b6eec4738d20589601408 26778 python3-autoclicker_1.0.0-1_all.deb
+ c9e7ea078484ad19040ec9dd4a825bda83a9754b 886 autoclicker_1.0.0-1.dsc
+ 6ef463c4f0f287d1e8a75bd43c506cd5c6ea014a 32542 autoclicker_1.0.0.orig.tar.gz
+ e611a21c06a73411e52f710ec8662cfc4927b25d 1384 autoclicker_1.0.0-1.debian.tar.xz
+ 8509e9a6c0c6b8ea72ad9b4495ddf05ae56e63c4 7800 autoclicker_1.0.0-1_amd64.buildinfo
+ 39b5ca7c7497d37eb3955ee67f389537fde60da0 20178 python3-autoclicker_1.0.0-1_all.deb
 Checksums-Sha256:
- 62d39fe7705bcd4371f2dd68508dd7c75dd4147e218ca8798368f3f0d2eb424f 7567 autoclicker_1.0.0-1_amd64.buildinfo
- 1b6dd6ba66538364b75691fecee8be335fa08df157e45c150ecc84165ceec7ab 26778 python3-autoclicker_1.0.0-1_all.deb
+ 0cd6ca593a9f986c807e3205955f7a563a323687786c03832b2f4a1138184eb6 886 autoclicker_1.0.0-1.dsc
+ a6edc4f80baea7ec9a8ba25d7bab38e88c2d8b4aa74a728193ab03d641fa123e 32542 autoclicker_1.0.0.orig.tar.gz
+ a1d349639930c0644bf3cf5cd3785c63256186f3c6a0b0a6a07feda8c49b650f 1384 autoclicker_1.0.0-1.debian.tar.xz
+ bf4de630c699fddfdf806e05dc6e612bd45eff3436b96c839ea72be1fc5ecefa 7800 autoclicker_1.0.0-1_amd64.buildinfo
+ 625087cd1879a2c6fa5125ffd189965767451f0909651bb9078deadf8b323902 20178 python3-autoclicker_1.0.0-1_all.deb
 Files:
- 1e7fd552dd02e81d5d1bebd39e5064ee 7567 utils optional autoclicker_1.0.0-1_amd64.buildinfo
- 220a4c7340904884fc3332b048a08c55 26778 utils optional python3-autoclicker_1.0.0-1_all.deb
+ bd01bbe60e673b35686503d2d99de0d6 886 python optional autoclicker_1.0.0-1.dsc
+ 0a82d935833951d37a6a8e284344cc5e 32542 python optional autoclicker_1.0.0.orig.tar.gz
+ 1ed68cdddc194a1fa5738cfe1ad21882 1384 python optional autoclicker_1.0.0-1.debian.tar.xz
+ b0fd1d06d7de3b4006b926e28c81a2fd 7800 python optional autoclicker_1.0.0-1_amd64.buildinfo
+ 22fbfa983124749ea7811cf34f2a60f8 20178 python optional python3-autoclicker_1.0.0-1_all.deb

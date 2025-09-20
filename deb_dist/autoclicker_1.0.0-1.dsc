@@ -8,13 +8,13 @@ Homepage: https://github.com/superman2002/AutoClicker
 Standards-Version: 4.7.0
 Build-Depends: python3-setuptools, python3-all, debhelper (>= 12)
 Package-List:
- python3-autoclicker deb utils optional arch=all
+ python3-autoclicker deb python optional arch=all
 Checksums-Sha1:
- 9f8e5606e6bfc56e1f47716726c8225376964c92 62451 autoclicker_1.0.0.orig.tar.gz
- 8c247a28a448e6139a6091b15632cdac187d107b 1392 autoclicker_1.0.0-1.debian.tar.xz
+ 6ef463c4f0f287d1e8a75bd43c506cd5c6ea014a 32542 autoclicker_1.0.0.orig.tar.gz
+ e611a21c06a73411e52f710ec8662cfc4927b25d 1384 autoclicker_1.0.0-1.debian.tar.xz
 Checksums-Sha256:
- 85ad013392d765e45ea7d764ad7f955cb0948ccb23e680d68860db5ee04b9274 62451 autoclicker_1.0.0.orig.tar.gz
- 7b4e8017e7c9bb734b606164e061748fb176ab1b645ef220d6010f801582d528 1392 autoclicker_1.0.0-1.debian.tar.xz
+ a6edc4f80baea7ec9a8ba25d7bab38e88c2d8b4aa74a728193ab03d641fa123e 32542 autoclicker_1.0.0.orig.tar.gz
+ a1d349639930c0644bf3cf5cd3785c63256186f3c6a0b0a6a07feda8c49b650f 1384 autoclicker_1.0.0-1.debian.tar.xz
 Files:
- 309383903fd67adca907efac0a14c58c 62451 autoclicker_1.0.0.orig.tar.gz
- 1540eb95103dadc9efcb8e4f62e0a753 1392 autoclicker_1.0.0-1.debian.tar.xz
+ 0a82d935833951d37a6a8e284344cc5e 32542 autoclicker_1.0.0.orig.tar.gz
+ 1ed68cdddc194a1fa5738cfe1ad21882 1384 autoclicker_1.0.0-1.debian.tar.xz

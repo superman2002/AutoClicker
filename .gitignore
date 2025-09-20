@@ -2,3 +2,5 @@
 /autoclicker_settings.json
 /venv
 debug_screenshot_*.png*
+build_deb.sh
+DEB_BUILD_GUIDE.md

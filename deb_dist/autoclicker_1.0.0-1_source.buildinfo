@@ -3,14 +3,14 @@ Source: autoclicker
 Architecture: source
 Version: 1.0.0-1
 Checksums-Md5:
- fcece02c0ccb6487acf2d697aeef85bb 885 autoclicker_1.0.0-1.dsc
+ d6a3b075ba5e629e5777ade7d232a212 886 autoclicker_1.0.0-1.dsc
 Checksums-Sha1:
- 61617e1acbe4cd4a6f0e7732de1ebc0cd561cdab 885 autoclicker_1.0.0-1.dsc
+ bfc47910a03e872e96cb7ecc2bb2a71874ffb654 886 autoclicker_1.0.0-1.dsc
 Checksums-Sha256:
- 2aa7c3f45158f88335279d4ab5e77fa7129f324b67581e7b3a525adf793edf7f 885 autoclicker_1.0.0-1.dsc
+ 0567cad7e7bfffbe5576671e2c0459d2bd81af533918ae9aefb00f1ccdc755be 886 autoclicker_1.0.0-1.dsc
 Build-Origin: Ubuntu
 Build-Architecture: amd64
-Build-Date: Sat, 20 Sep 2025 08:52:48 +0200
+Build-Date: Sat, 20 Sep 2025 17:06:51 +0200
 Build-Tainted-By:
  merged-usr-via-aliased-dirs
  usr-local-has-libraries
@@ -218,4 +218,4 @@ Environment:
  LC_PAPER="en_GB.UTF-8"
  LC_TELEPHONE="en_GB.UTF-8"
  LC_TIME="en_GB.UTF-8"
- SOURCE_DATE_EPOCH="1758351166"
+ SOURCE_DATE_EPOCH="1758380808"

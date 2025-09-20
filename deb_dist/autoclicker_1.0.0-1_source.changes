@@ -1,5 +1,5 @@
 Format: 1.8
-Date: Sat, 20 Sep 2025 08:52:46 +0200
+Date: Sat, 20 Sep 2025 17:06:48 +0200
 Source: autoclicker
 Built-For-Profiles: noudeb
 Architecture: source
@@ -13,17 +13,17 @@ Changes:
  .
    * source package automatically created by stdeb 0.11.0
 Checksums-Sha1:
- 61617e1acbe4cd4a6f0e7732de1ebc0cd561cdab 885 autoclicker_1.0.0-1.dsc
- 9f8e5606e6bfc56e1f47716726c8225376964c92 62451 autoclicker_1.0.0.orig.tar.gz
- 8c247a28a448e6139a6091b15632cdac187d107b 1392 autoclicker_1.0.0-1.debian.tar.xz
- 2e7514f1a9387ac34d4d5f0397498ba63717863c 7500 autoclicker_1.0.0-1_source.buildinfo
+ bfc47910a03e872e96cb7ecc2bb2a71874ffb654 886 autoclicker_1.0.0-1.dsc
+ 6ef463c4f0f287d1e8a75bd43c506cd5c6ea014a 32542 autoclicker_1.0.0.orig.tar.gz
+ 0a984234696500952ca9a31a869ee3f5316d2bc3 1388 autoclicker_1.0.0-1.debian.tar.xz
+ 55546d756d81b37a247c37f6316624d7e7aefe76 7500 autoclicker_1.0.0-1_source.buildinfo
 Checksums-Sha256:
- 2aa7c3f45158f88335279d4ab5e77fa7129f324b67581e7b3a525adf793edf7f 885 autoclicker_1.0.0-1.dsc
- 85ad013392d765e45ea7d764ad7f955cb0948ccb23e680d68860db5ee04b9274 62451 autoclicker_1.0.0.orig.tar.gz
- 7b4e8017e7c9bb734b606164e061748fb176ab1b645ef220d6010f801582d528 1392 autoclicker_1.0.0-1.debian.tar.xz
- 1085e7daadbefaa76f924217ad79390dd236834406eb642f53a2ccc62c369220 7500 autoclicker_1.0.0-1_source.buildinfo
+ 0567cad7e7bfffbe5576671e2c0459d2bd81af533918ae9aefb00f1ccdc755be 886 autoclicker_1.0.0-1.dsc
+ a6edc4f80baea7ec9a8ba25d7bab38e88c2d8b4aa74a728193ab03d641fa123e 32542 autoclicker_1.0.0.orig.tar.gz
+ 9702500972f46ff79ae49063ec04077f4f39f70d3c6b1ea6e236cd91c640db8f 1388 autoclicker_1.0.0-1.debian.tar.xz
+ 6d07e1a85973bb10fb1c7a64239a6478c002a2a637833d408d98fce97e37a780 7500 autoclicker_1.0.0-1_source.buildinfo
 Files:
- fcece02c0ccb6487acf2d697aeef85bb 885 utils optional autoclicker_1.0.0-1.dsc
- 309383903fd67adca907efac0a14c58c 62451 utils optional autoclicker_1.0.0.orig.tar.gz
- 1540eb95103dadc9efcb8e4f62e0a753 1392 utils optional autoclicker_1.0.0-1.debian.tar.xz
- a3246bd3a8331534f2132e2a90c30513 7500 utils optional autoclicker_1.0.0-1_source.buildinfo
+ d6a3b075ba5e629e5777ade7d232a212 886 python optional autoclicker_1.0.0-1.dsc
+ 0a82d935833951d37a6a8e284344cc5e 32542 python optional autoclicker_1.0.0.orig.tar.gz
+ ee113bb1cdc2787d2df3b505cff8256b 1388 python optional autoclicker_1.0.0-1.debian.tar.xz
+ b939b86527f766bba11699ee3e700df0 7500 python optional autoclicker_1.0.0-1_source.buildinfo
